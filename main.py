@@ -1,22 +1,21 @@
+import logging
 import os
 import re
-from typing import Optional, List
-from enum import Enum
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from google import genai
-from google.genai import types
-from slack_bolt import App
-from slack_bolt.adapter.socket_mode import SocketModeHandler
-import logging
-
-from jenkins import Jenkins, JenkinsException
 
 from collections import OrderedDict
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Optional, List
+
+from google.genai import types
+from google import genai
+from jenkins import Jenkins, JenkinsException
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_bolt import App
 
 # just globally set this
 logging.basicConfig(level=logging.INFO)
-
 
 # initialize Slack, Gemini, and Jenkins
 slack_app = App(token=os.getenv("SLACK_BOT_TOKEN"))
@@ -25,7 +24,6 @@ jenkins_server = Jenkins(url=os.environ["JENKINS_URL"],
                          token=os.environ["JENKINS_TOKEN"])
 
 thread_chats: OrderedDict[str, genai.chats.Chat] = OrderedDict()
-
 
 # system instruction we pass to Gemini
 system_instruction = """
