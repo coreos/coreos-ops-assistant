@@ -1,16 +1,16 @@
+import logging
 import os
 import re
-from typing import Optional, List
-from enum import Enum
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from slack_bolt import App
-from slack_bolt.adapter.socket_mode import SocketModeHandler
-import logging
-
-from jenkins import Jenkins, JenkinsException
 
 from collections import OrderedDict
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Optional, List
+
+from jenkins import Jenkins, JenkinsException
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_bolt import App
 
 # We support connecting to Gemini directly or to OpenRouter (for
 # access to a large selection of LLMs).
@@ -21,7 +21,6 @@ from pydantic_ai.providers.openrouter import OpenRouterProvider
 
 # just globally set this
 logging.basicConfig(level=logging.INFO)
-
 
 # initialize Slack, Gemini, and Jenkins
 slack_app = App(token=os.getenv("SLACK_BOT_TOKEN"))
