@@ -26,7 +26,8 @@ Currently, it can:
     *   `SLACK_APP_TOKEN`: Your Slack app token.
     *   `JENKINS_URL`: The URL of your Jenkins server.
     *   `JENKINS_TOKEN`: Your Jenkins token (often an API token).
-    *   `GEMINI_API_KEY`: Your Gemini API key.
+    *   `GEMINI_API_KEY`: (OPTIONAL) Your Gemini API key.
+    *   `OPENROUTER_API_KEY`: (OPTIONAL) Your OpenRouter access key
 
 ## Usage
 
@@ -58,7 +59,8 @@ Currently, it can:
       -e SLACK_APP_TOKEN='your_app_token' \
       -e JENKINS_URL='https://your.jenkins.url' \
       -e JENKINS_TOKEN='your_jenkins_token' \
-      -e GEMINI_API_KEY='your_gemini_api_key' \
+      -e GEMINI_API_KEY='your_api_key' \
+      -e OPENROUTER_API_KEY='your_api_key' \
       coreos-pipeline-assistant
     ```
 
@@ -69,7 +71,8 @@ Currently, it can:
     SLACK_APP_TOKEN=your_app_token
     JENKINS_URL=https://your.jenkins.url
     JENKINS_TOKEN=your_jenkins_token
-    GEMINI_API_KEY=your_gemini_api_key
+    GEMINI_API_KEY=your_api_key
+    OPENROUTER_API_KEY=your_api_key
     ```
     Then run the container with the `--env-file` flag:
     ```
