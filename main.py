@@ -105,7 +105,7 @@ class StreamBuild:
     """Represents the last successful build for a stream."""
     build: Optional[Build]
     build_version: Optional[str] = None
-    status: Optional[StreamStatus] = None
+    status: Optional[str] = None
 
 
 @agent.tool_plain
@@ -289,13 +289,13 @@ def get_pipeline_status() -> OrderedDict[str, StreamBuild]:
         # streams release every 2 weeks. Probably cleaner to just only filter in
         # mechanical and development builds (i.e. builds that are automated).
         if time_since_build < timedelta(hours=36):
-            stream_build_obj.status = StreamStatus.GREEN
+            stream_build_obj.status = StreamStatus.GREEN.value
         elif time_since_build < timedelta(hours=72):
-            stream_build_obj.status = StreamStatus.YELLOW
+            stream_build_obj.status = StreamStatus.YELLOW.value
         else:
-            stream_build_obj.status = StreamStatus.RED
+            stream_build_obj.status = StreamStatus.RED.value
 
-        logging.debug(f"Stream: {stream}, Build: {build.build_number}, Time Since Build: {time_since_build}, Calculated Status: {stream_build_obj.status}")
+        logging.info(f"Stream: {stream}, Build: {build.build_number}, Time Since Build: {time_since_build}, Calculated Status: {stream_build_obj.status}")
         status[stream] = stream_build_obj
 
     # Sort the status by the timestamp of the build in descending order (most recent first)
