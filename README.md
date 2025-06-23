@@ -65,11 +65,11 @@ Currently, it can:
     **Using a `.env` file:**
     Create a file named `.env` with the following content:
     ```
-    SLACK_BOT_TOKEN='your_bot_token'
-    SLACK_APP_TOKEN='your_app_token'
-    JENKINS_URL='https://your.jenkins.url'
-    JENKINS_TOKEN='your_jenkins_token'
-    GEMINI_API_KEY='your_gemini_api_key'
+    SLACK_BOT_TOKEN=your_bot_token
+    SLACK_APP_TOKEN=your_app_token
+    JENKINS_URL=https://your.jenkins.url
+    JENKINS_TOKEN=your_jenkins_token
+    GEMINI_API_KEY=your_gemini_api_key
     ```
     Then run the container with the `--env-file` flag:
     ```
