@@ -122,7 +122,7 @@ def get_associated_jenkins_build(channel: str, thread_ts: Optional[str] = None) 
         the job name, the build number, build result, build description, and
         build timestamp.
     """
-    logging.info(f"called for thread_ts={thread_ts}")
+    logging.info(f"get_associated_jenkins_build called for thread_ts={thread_ts}")
 
     if thread_ts:
         # we were mentioned in a thread; get the parent of the thread
@@ -204,7 +204,7 @@ def get_jenkins_build_logs(job_name: str, build_number: int) -> str:
     Returns:
         The logs for the specified Jenkins build.
     """
-    logging.info(f"called for job_name={job_name} build_number={build_number}")
+    logging.info(f"get_jenkins_build_logs called for job_name={job_name} build_number={build_number}")
     try:
         return jenkins_server.get_build_console_output(job_name, build_number)
     except JenkinsException as e:
@@ -222,7 +222,7 @@ def get_list_of_builds_for_job(job_name: str) -> List[Build]:
     Returns:
         A list of Build objects for the specified Jenkins job.
     """
-    logging.info(f"called for job_name={job_name}")
+    logging.info(f"get_list_of_builds_for_job called for job_name={job_name}")
     builds = []
     try:
         job_info = jenkins_server.get_job_info(job_name, depth=1)
@@ -264,7 +264,7 @@ def get_pipeline_status() -> OrderedDict[str, StreamBuild]:
     Returns:
         A dictionary mapping the stream to a StreamBuild object.
     """
-    logging.info("called")
+    logging.info("get_pipeline_status called")
     builds = get_list_of_builds_for_job("release")
     status: OrderedDict[str, StreamBuild] = {}
     for build in builds:
