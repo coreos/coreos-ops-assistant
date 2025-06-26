@@ -312,17 +312,7 @@ def handle_app_mention_events(body, logger, say):
 
     slack_app.client.reactions_add(channel=channel, name='hourglass_flowing_sand', timestamp=event["ts"])
 
-    pre_prompt = f"You were just pinged in channel {channel} by a user "
-
     thread_ts = event.get("thread_ts")
-    if thread_ts:
-        # presumably we should just make a context object or closure instead
-        # from our tools but let's see how well this works...
-        pre_prompt += f" from within a thread with thread_ts={thread_ts}. "
-    else:
-        pre_prompt += " from outside of a thread. "
-    pre_prompt += "Here is the user's message: "
-
     user_prompt = strip_userid(event['text'])
     if user_prompt == "":
         logger.info("got empty command; ignoring...")
@@ -330,24 +320,29 @@ def handle_app_mention_events(body, logger, say):
 
     # If in a thread, manage chat history using the global thread_chats dict.
     # Otherwise, create a new chat for single messages.
-    if thread_ts:
-        if thread_ts not in thread_chats:
-            # Remove oldest if dict size exceeds 30
-            if len(thread_chats) >= 30:
-                thread_chats.popitem(last=False)
-            thread_chats[thread_ts] = gemini_client.chats.create(
-                model="gemini-2.5-flash-preview-05-20",
-                config=gemini_config,
-            )
-        chat = thread_chats[thread_ts]
-    else:
-        chat = gemini_client.chats.create(
+    if not thread_ts or thread_ts not in thread_chats:
+        # Remove oldest if dict size exceeds 30
+        if len(thread_chats) >= 30:
+            thread_chats.popitem(last=False)
+        thread_chats[thread_ts or event["ts"]] = gemini_client.chats.create(
             model="gemini-2.5-flash-preview-05-20",
             config=gemini_config,
         )
 
+        pre_prompt = f"You were just pinged in channel {channel} by a user "
+        if thread_ts:
+            # presumably we should just make a context object or closure instead
+            # from our tools but let's see how well this works...
+            pre_prompt += f" from within a thread with thread_ts={thread_ts}. "
+        else:
+            pre_prompt += " from outside of a thread. "
+        pre_prompt += "Here is the user's message: "
+        user_prompt = pre_prompt + user_prompt
+
+    chat = thread_chats[thread_ts or event["ts"]]
+
     # Send the user's message to the appropriate chat
-    response = chat.send_message(pre_prompt + strip_userid(event['text']))
+    response = chat.send_message(user_prompt)
 
     say(text=response.text, thread_ts=thread_ts or event["ts"])
     slack_app.client.reactions_remove(channel=channel, name='hourglass_flowing_sand', timestamp=event["ts"])
