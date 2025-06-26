@@ -15,7 +15,8 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt import App
 
 # just globally set this
-logging.basicConfig(level=logging.INFO)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 # initialize Slack, Gemini, and Jenkins
 slack_app = App(token=os.getenv("SLACK_BOT_TOKEN"))
