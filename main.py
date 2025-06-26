@@ -1,6 +1,8 @@
+import functools
 import logging
 import os
 import re
+import requests
 
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -13,6 +15,16 @@ from google import genai
 from jenkins import Jenkins, JenkinsException
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt import App
+
+STREAM_MAPPING = {
+    1: 'next',
+    2: 'testing',
+    3: 'stable',
+    10: 'next-devel',
+    20: 'testing-devel',
+    91: 'rawhide',
+    92: 'branched',
+}
 
 # just globally set this
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -232,6 +244,57 @@ def get_list_of_builds_for_job(job_name: str) -> List[Build]:
         return []
 
 
+def get_latest_successful_build_for_stream(stream_name: str) -> Build:
+    """Gets the latest successful build of a given stream.
+
+    Args:
+        stream_name: The name of the stream.
+
+    Returns:
+        A Build object containing details about the build.
+    """
+    logging.info(f"called for stream_name={stream_name}")
+    builds = get_list_of_builds_for_job("release")
+    for build in builds:
+        if build.build_result != 'SUCCESS' or build.stream != stream_name:
+            continue
+        return build
+
+
+def get_rpms_for_build(build_version: str, build_architecture: Optional[str] = None) -> dict[str, str]:
+    """Gets the list of RPM packages and their versions for a given build version.
+
+    Args:
+        build_version: The version of the build.
+        build_architecture: The architecture of the build. Optional. Defaults to x86_64 if missing.
+
+    Returns:
+        A dictionary of package name to package version.
+    """
+
+    logging.info(f"Fetching RPMs for version={build_version}, arch={build_architecture}")
+    return get_cached_rpms_for_build(build_version, build_architecture)
+
+
+@functools.lru_cache()
+def get_cached_rpms_for_build(build_version: str, build_architecture: Optional[str] = None) -> dict[str, str]:
+    stream = STREAM_MAPPING[int(build_version.split('.')[2])]
+    architecture = build_architecture if build_architecture else "x86_64"
+    url = f"https://builds.coreos.fedoraproject.org/prod/streams/{stream}/builds/{build_version}/{architecture}/commitmeta.json"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+        commitmeta = response.json()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching commitmeta.json from {url}: {e}")
+        return {}
+
+    pkgs = {}
+    for pkg in commitmeta['rpmostree.rpmdb.pkglist']:
+        pkgs[pkg[0]] = f"{pkg[1]}:{pkg[2]}-{pkg[3]}.{pkg[4]}"
+    return pkgs
+
+
 def get_pipeline_status() -> OrderedDict[str, StreamBuild]:
     """Gets the status of the Jenkins pipeline.
 
@@ -299,6 +362,8 @@ gemini_config = types.GenerateContentConfig(
     tools=[get_associated_jenkins_build,
            get_jenkins_build_logs,
            get_pipeline_status,
+           get_latest_successful_build_for_stream,
+           get_rpms_for_build,
            retry_jenkins_build],
     system_instruction=system_instruction,
 )
