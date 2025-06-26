@@ -141,8 +141,7 @@ def get_associated_jenkins_build(channel: str, thread_ts: Optional[str] = None) 
         message = result["messages"][0]
 
     text = message["text"]
-    # Updated regex to capture stream, architectures, and version
-    match = re.search(r"https://(.*?)/job/(.*?)/(.*?)/", text)
+    match = re.search(r"https://(.*?)/job/(.*?)/([0-9]+)", text)
     if not match:
         return Build(
             job_name="",
