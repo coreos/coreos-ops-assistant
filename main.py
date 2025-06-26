@@ -20,7 +20,8 @@ from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 
 # just globally set this
-logging.basicConfig(level=logging.INFO)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 # initialize Slack, Gemini, and Jenkins
 slack_app = App(token=os.getenv("SLACK_BOT_TOKEN"))
