@@ -122,25 +122,25 @@ class StreamBuild:
 
 
 @agent.tool_plain
-def get_associated_jenkins_build(channel: str, thread_ts: Optional[str] = None) -> Build:
+def get_associated_jenkins_build(channel: str, thread_id: Optional[str] = None) -> Build:
     """Gets the Jenkins build that is best associated with a user query.
 
     Args:
         channel: The Slack channel
-        thread_ts: The Slack thread timestamp, if called from a thread.
+        thread_id: The id of the thread, if called from a thread.
 
     Returns:
         A Build object containing information about the Jenkins build, including
         the job name, the build number, build result, build description, and
         build timestamp.
     """
-    logging.info(f"get_associated_jenkins_build called for thread_ts={thread_ts}")
+    logging.info(f"get_associated_jenkins_build called for thread_id={thread_id}")
 
-    if thread_ts:
+    if thread_id:
         # we were mentioned in a thread; get the parent of the thread
         result = slack_app.client.conversations_history(
             channel=channel,
-            latest=thread_ts,
+            latest=thread_id,
             inclusive=True,
             limit=1
         )
@@ -392,11 +392,11 @@ def handle_app_mention_events(body, logger, say):
 
     pre_prompt = f"You were just pinged in channel {channel} by a user "
 
-    thread_ts = event.get("thread_ts")
-    if thread_ts:
+    thread_id = event.get("thread_ts")
+    if thread_id:
         # presumably we should just make a context object or closure instead
         # from our tools but let's see how well this works...
-        pre_prompt += f" from within a thread with thread_ts={thread_ts}. "
+        pre_prompt += f" from within a thread with thread_id={thread_id}. "
     else:
         pre_prompt += " from outside of a thread. "
     pre_prompt += "Here is the user's message: "
@@ -408,17 +408,17 @@ def handle_app_mention_events(body, logger, say):
 
     # If in a thread, manage message history using the global thread_chats dict.
     # Otherwise, use empty message history for single messages.
-    if thread_ts:
-        if thread_ts not in thread_chats:
-            thread_chats[thread_ts] = []
-        message_history = thread_chats[thread_ts]
+    if thread_id:
+        if thread_id not in thread_chats:
+            thread_chats[thread_id] = []
+        message_history = thread_chats[thread_id]
     else:
         message_history = []
 
     result = agent.run_sync(pre_prompt + user_prompt, message_history=message_history)
     message_history.extend(result.new_messages())
 
-    say(text=result.output, thread_ts=thread_ts or event["ts"])
+    say(text=result.output, thread_ts=thread_id or event["ts"])
     slack_app.client.reactions_remove(channel=channel, name='hourglass_flowing_sand', timestamp=event["ts"])
 
 
