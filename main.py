@@ -1,5 +1,7 @@
+import asyncio
 import functools
 import logging
+import nest_asyncio
 import os
 import re
 import requests
@@ -11,6 +13,7 @@ from enum import Enum
 from typing import Optional, List
 
 from jenkins import Jenkins, JenkinsException
+from nio import RoomMessage
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt import App
 
@@ -20,6 +23,9 @@ from pydantic_ai import Agent, agent
 from pydantic_ai.models.gemini import GeminiModel
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
+
+# We support either Slack Or Matrix
+from chat_platform import SlackPlatform, MatrixPlatform
 
 STREAM_MAPPING = {
     1: 'next',
@@ -34,9 +40,6 @@ STREAM_MAPPING = {
 # just globally set this
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
-
-# initialize Slack, Gemini, and Jenkins
-slack_app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 
 jenkins_server = Jenkins(url=os.environ["JENKINS_URL"],
                          token=os.environ["JENKINS_TOKEN"])
@@ -122,11 +125,12 @@ class StreamBuild:
 
 
 @agent.tool_plain
-def get_associated_jenkins_build(channel: str, thread_id: Optional[str] = None) -> Build:
+def get_associated_jenkins_build(channel: str, event_id: str, thread_id: Optional[str] = None) -> Build:
     """Gets the Jenkins build that is best associated with a user query.
 
     Args:
         channel: The Slack channel
+        event_id: The id of the user message triggering this request.
         thread_id: The id of the thread, if called from a thread.
 
     Returns:
@@ -134,27 +138,14 @@ def get_associated_jenkins_build(channel: str, thread_id: Optional[str] = None) 
         the job name, the build number, build result, build description, and
         build timestamp.
     """
-    logging.info(f"get_associated_jenkins_build called for thread_id={thread_id}")
+    logging.info(f"get_associated_jenkins_build called for event_id={event_id} thread_id={thread_id}")
 
-    if thread_id:
-        # we were mentioned in a thread; get the parent of the thread
-        result = slack_app.client.conversations_history(
-            channel=channel,
-            latest=thread_id,
-            inclusive=True,
-            limit=1
-        )
-        message = result["messages"][0]
-    else:
-        # get the latest message in the channel
-        result = slack_app.client.conversations_history(
-            channel=channel,
-            limit=1
-        )
-        message = result["messages"][0]
+    # Get the starting message for the conversation
+    message = chat_platform.get_message(channel=channel, event_id=thread_id or event_id)
 
-    text = message["text"]
-    match = re.search(r"https://(.*?)/job/(.*?)/([0-9]+)", text)
+    logging.info(f"message in get_associated_jenkins_build: {message}")
+
+    match = re.search(r"https://(.*?)/job/(.*?)/([0-9]+)", message)
     if not match:
         return Build(
             job_name="",
@@ -382,26 +373,18 @@ def retry_jenkins_build(job_name: str, build_number: int) -> str:
     return jenkins_server.retry_build(job_name, build_number)
 
 
-@slack_app.event("app_mention")
-def handle_app_mention_events(body, logger, say):
-    logger.info(body)
-    event = body["event"]
-    channel = event["channel"]
-
-    slack_app.client.reactions_add(channel=channel, name='hourglass_flowing_sand', timestamp=event["ts"])
-
-    pre_prompt = f"You were just pinged in channel {channel} by a user "
-
-    thread_id = event.get("thread_ts")
+def process_message(channel, event_id, thread_id, text=''):
+    pre_prompt = f"You were just pinged in channel='{channel}' by a user "
+    pre_prompt += f"in a message with event_id='{event_id}'. This message is"
     if thread_id:
         # presumably we should just make a context object or closure instead
         # from our tools but let's see how well this works...
-        pre_prompt += f" from within a thread with thread_id={thread_id}. "
+        pre_prompt += f" from within a thread with thread_id='{thread_id}'. "
     else:
         pre_prompt += " from outside of a thread. "
     pre_prompt += "Here is the user's message: "
 
-    user_prompt = strip_userid(event['text'])
+    user_prompt = strip_userid(text)
     if user_prompt == "":
         logger.info("got empty command; ignoring...")
         return
@@ -413,19 +396,20 @@ def handle_app_mention_events(body, logger, say):
             thread_chats[thread_id] = []
         message_history = thread_chats[thread_id]
     else:
-        message_history = []
+        thread_chats[event_id] = []
+        message_history = thread_chats[event_id]
 
+    print(f"YYY {pre_prompt}")
     result = agent.run_sync(pre_prompt + user_prompt, message_history=message_history)
     message_history.extend(result.new_messages())
-
-    say(text=result.output, thread_ts=thread_id or event["ts"])
-    slack_app.client.reactions_remove(channel=channel, name='hourglass_flowing_sand', timestamp=event["ts"])
+    return result
 
 
-# Convert '<@USERID> msg' to 'msg'
+
+# Convert '<@USERID> msg' to 'msg' (Slack) or '@user:matrix.org msg' to 'msg' (Matrix)
 def strip_userid(msg: str):
     elems = msg.split(' ', 1)
-    if not elems[0].startswith('<@'):
+    if not elems[0].startswith('<@') and not elems[0].startswith('@'):
         return msg.strip()
     if len(elems) > 1:
         return elems[1].strip()
@@ -433,4 +417,35 @@ def strip_userid(msg: str):
 
 
 if __name__ == "__main__":
-    SocketModeHandler(slack_app, os.environ["SLACK_APP_TOKEN"]).start()
+    matrix_server = os.environ.get("MATRIX_SERVER", '')
+    matrix_access_token = os.environ.get("MATRIX_ACCESS_TOKEN", '')
+    matrix_room = os.environ.get("MATRIX_ROOM", '')
+    slack_bot_token = os.environ.get("SLACK_BOT_TOKEN", '')
+    slack_app_token = os.environ.get("SLACK_APP_TOKEN", '')
+
+    matrix_defined = matrix_server and matrix_access_token and matrix_room
+    slack_defined = slack_bot_token and slack_app_token
+
+    if matrix_defined and slack_defined:
+        raise ValueError("Env vars for matrix and slack are set. Can't target both at the same time.")
+    elif not slack_defined and not matrix_defined:
+        raise ValueError("Must set environment vars to choose a chat platform. See README")
+
+    if slack_defined:
+        print("Running in Slack mode.")
+        chat_platform = SlackPlatform(slack_bot_token, process_message_func=process_message)
+        handler = SocketModeHandler(chat_platform.slack_app, slack_app_token)
+        handler.app.event("app_mention")(chat_platform.handle_app_mention_events)
+        handler.start()
+    else:
+        print("Running in Matrix mode.")
+        nest_asyncio.apply() # Apply nest_asyncio to allow nested event loops
+        chat_platform = MatrixPlatform(matrix_server, matrix_access_token,
+                matrix_room, process_message_func=process_message)
+        # Register a callback to be called when we receive new messages
+        chat_platform.client.add_event_callback(
+            chat_platform.monitor_messages, RoomMessage)
+        try:
+            asyncio.run(chat_platform.client.sync_forever(full_state=True))
+        finally:
+            asyncio.run(chat_platform.client.close())
