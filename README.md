@@ -22,11 +22,29 @@ Currently, it can:
     ```
 
 2.  **Set environment variables:**
-    *   `SLACK_BOT_TOKEN`: Your Slack bot token.
-    *   `SLACK_APP_TOKEN`: Your Slack app token.
+
+For Jenkins:
+
     *   `JENKINS_URL`: The URL of your Jenkins server.
     *   `JENKINS_TOKEN`: Your Jenkins token (often an API token).
+
+If using Slack:
+
+    *   `SLACK_BOT_TOKEN`: Your Slack bot token.
+    *   `SLACK_APP_TOKEN`: Your Slack app token.
+
+If using Matrix:
+
+    *   `MATRIX_SERVER`: Your homeserver (i.e.  https://matrix.org)
+    *   `MATRIX_ACCESS_TOKEN`: Your device access token
+    *   `MATRIX_ROOM`: Your room FQDN (i.e. `#tmp-coreos-pipeline-assistant-testing:matrix.org`)
+
+If using GEMINI:
+
     *   `GEMINI_API_KEY`: (OPTIONAL) Your Gemini API key.
+
+If using OpenRouter:
+
     *   `OPENROUTER_API_KEY`: (OPTIONAL) Your OpenRouter access key
 
 ## Usage
@@ -52,15 +70,33 @@ Currently, it can:
 2.  **Run the container:**
     You can pass the environment variables directly with the `-e` flag, or you can use a `.env` file.
 
+
     **Using the `-e` flag:**
     ```
-    podman run -it --rm \
-      -e SLACK_BOT_TOKEN='your_bot_token' \
-      -e SLACK_APP_TOKEN='your_app_token' \
-      -e JENKINS_URL='https://your.jenkins.url' \
-      -e JENKINS_TOKEN='your_jenkins_token' \
-      -e GEMINI_API_KEY='your_api_key' \
-      -e OPENROUTER_API_KEY='your_api_key' \
+    # First export the appropriate variables in your environment based
+    # on what you are using (i.e. slack/matrix and gemini/openrouter)
+    export SLACK_BOT_TOKEN='your_bot_token'
+    export SLACK_APP_TOKEN='your_app_token'
+    export MATRIX_SERVER='https://matrix.org'
+    export MATRIX_ACCESS_TOKEN='your_app_token'
+    export MATRIX_ROOM='your_room_fqdn'
+    export JENKINS_URL='https://your.jenkins.url'
+    export JENKINS_TOKEN='your_jenkins_token'
+    export GEMINI_API_KEY='your_api_key'
+    export OPENROUTER_API_KEY='your_api_key'
+
+    # Now run `podman` and it will pull the values from the variables
+    # already set in your environment.
+    podman run -it --rm        \
+      -e SLACK_BOT_TOKEN       \
+      -e SLACK_APP_TOKEN       \
+      -e MATRIX_SERVER         \
+      -e MATRIX_ACCESS_TOKEN   \
+      -e MATRIX_ROOM           \
+      -e JENKINS_URL           \
+      -e JENKINS_TOKEN         \
+      -e GEMINI_API_KEY        \
+      -e OPENROUTER_API_KEY    \
       coreos-pipeline-assistant
     ```
 
@@ -69,6 +105,9 @@ Currently, it can:
     ```
     SLACK_BOT_TOKEN=your_bot_token
     SLACK_APP_TOKEN=your_app_token
+    MATRIX_SERVER=https://matrix.org
+    MATRIX_ACCESS_TOKEN=your_app_token
+    MATRIX_ROOM=your_room_fqdn
     JENKINS_URL=https://your.jenkins.url
     JENKINS_TOKEN=your_jenkins_token
     GEMINI_API_KEY=your_api_key

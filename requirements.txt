@@ -1,2 +1,7 @@
 slack-bolt
 pydantic-ai
+matrix-nio
+python-olm
+peewee
+nest_asyncio
+atomicwrites

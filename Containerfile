@@ -2,7 +2,7 @@
 FROM quay.io/fedora/fedora-minimal:42
 
 # Install Python, pip, and any other required dependencies
-RUN dnf install -y python3-pip && dnf clean all
+RUN dnf install -y python3-pip python3-devel make gcc-c++ && dnf clean all
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
