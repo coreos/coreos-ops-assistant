@@ -374,12 +374,12 @@ def retry_jenkins_build(job_name: str, build_number: int) -> str:
 
 
 def process_message(channel, event_id, thread_id, text=''):
-    pre_prompt = f"You were just pinged in channel='{channel}' by a user "
-    pre_prompt += f"in a message with event_id='{event_id}'. This message is"
+    pre_prompt = f"You were just pinged in channel=\"{channel}\" by a user "
+    pre_prompt += f"in a message with event_id=\"{event_id}\". This message is"
     if thread_id:
         # presumably we should just make a context object or closure instead
         # from our tools but let's see how well this works...
-        pre_prompt += f" from within a thread with thread_id='{thread_id}'. "
+        pre_prompt += f" from within a thread with thread_id=\"{thread_id}\". "
     else:
         pre_prompt += " from outside of a thread. "
     pre_prompt += "Here is the user's message: "
