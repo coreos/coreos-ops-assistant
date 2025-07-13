@@ -399,6 +399,10 @@ def process_message(channel, event_id, thread_id, text=''):
         thread_chats[event_id] = []
         message_history = thread_chats[event_id]
 
+    # Garbage collect so we don't grow boundlessly
+    if len(thread_chats) > 30:
+        thread_chats.popitem(last=False)
+
     print(f"YYY {pre_prompt}")
     result = agent.run_sync(pre_prompt + user_prompt, message_history=message_history)
     message_history.extend(result.new_messages())
