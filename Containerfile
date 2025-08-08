@@ -5,16 +5,11 @@ FROM quay.io/fedora/fedora-minimal:42
 RUN dnf install -y python3-pip && dnf clean all
 
 # Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy the local code to the container
+# Copy requirements first for better layer caching
 COPY requirements.txt .
-COPY . .
+COPY *.py .
 
 # Install dependencies
 RUN pip3 install --no-cache-dir --root-user-action=ignore -r requirements.txt
-
-# Command to run the application
-# The environment variables should be passed in at runtime
-# (e.g., using `podman run -e ...` or a .env file)
-CMD ["python3", "main.py"]
