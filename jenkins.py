@@ -10,15 +10,16 @@ class JenkinsException(Exception):
 
 
 class Jenkins:
-    def __init__(self, url: str, token: str):
+    def __init__(self, url: str, token: str, verify_ssl: bool = True):
         self.url = url.rstrip('/')
         self.headers = {"Authorization": f"Bearer {token}"}
+        self.verify_ssl = verify_ssl
 
     def _get_json(self, path: str, params: Optional[Dict] = None) -> Dict:
         """Helper to make a GET request and return JSON."""
         full_url = f"{self.url}/{path}/api/json"
         try:
-            response = requests.get(full_url, headers=self.headers, params=params)
+            response = requests.get(full_url, headers=self.headers, params=params, verify=self.verify_ssl)
             response.raise_for_status()  # Raise an exception for HTTP errors
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -30,7 +31,7 @@ class Jenkins:
         """Helper to make a GET request and return text."""
         full_url = f"{self.url}/{path}"
         try:
-            response = requests.get(full_url, headers=self.headers)
+            response = requests.get(full_url, headers=self.headers, verify=self.verify_ssl)
             response.raise_for_status()
             return response.text
         except requests.exceptions.RequestException as e:
@@ -40,7 +41,7 @@ class Jenkins:
         """Helper to make a POST request."""
         full_url = f"{self.url}/{path}"
         try:
-            response = requests.post(full_url, headers=self.headers, data=data)
+            response = requests.post(full_url, headers=self.headers, data=data, verify=self.verify_ssl)
             response.raise_for_status()
             return response
         except requests.exceptions.RequestException as e:

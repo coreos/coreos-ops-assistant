@@ -28,12 +28,13 @@ def setup_jenkins_client() -> Jenkins:
     """Initialize Jenkins client from environment variables."""
     jenkins_url = os.environ.get("JENKINS_URL")
     jenkins_token = os.environ.get("JENKINS_TOKEN")
+    verify_ssl = os.environ.get("JENKINS_VERIFY_SSL", "true").lower() == "true"
     
     if not jenkins_url or not jenkins_token:
         print("Error: JENKINS_URL and JENKINS_TOKEN environment variables are required")
         sys.exit(1)
     
-    return Jenkins(url=jenkins_url, token=jenkins_token)
+    return Jenkins(url=jenkins_url, token=jenkins_token, verify_ssl=verify_ssl)
 
 def setup_llm_agent() -> Optional[Agent]:
     """Initialize LLM agent if API keys are available."""

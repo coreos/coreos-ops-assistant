@@ -29,8 +29,10 @@ if missing_vars:
 # initialize Slack, Gemini, and Jenkins
 slack_app = App(token=os.environ["SLACK_BOT_TOKEN"])
 
+verify_ssl = os.environ.get("JENKINS_VERIFY_SSL", "true").lower() == "true"
 jenkins_server = Jenkins(url=os.environ["JENKINS_URL"],
-                         token=os.environ["JENKINS_TOKEN"])
+                         token=os.environ["JENKINS_TOKEN"],
+                         verify_ssl=verify_ssl)
 
 thread_chats: OrderedDict[str, list] = OrderedDict() # str -> list of messages
 
