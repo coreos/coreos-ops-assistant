@@ -61,10 +61,10 @@ succinct.
 # We select here based on the which tokens are available in the environment,
 # either $GEMINI_API_KEY or $OPENROUTER_API_KEY.
 if os.environ.get('GEMINI_API_KEY', ''):
-    model = GeminiModel('gemini-2.5-flash', provider='google-gla')
+    model = GeminiModel('gemini-2.5-pro', provider='google-gla')
 elif os.environ.get('OPENROUTER_API_KEY', ''):
     model = OpenAIChatModel(
-        'google/gemini-2.5-flash-preview-05-20',
+        'google/gemini-2.5-pro',
         provider=OpenRouterProvider(api_key=os.environ.get('OPENROUTER_API_KEY'))
     )
 else:
