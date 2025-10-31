@@ -22,7 +22,7 @@ from slack_bolt import App
 # access to a large selection of LLMs).
 from pydantic_ai import Agent, agent
 from pydantic_ai.models.gemini import GeminiModel
-from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 
 # We support either Slack Or Matrix
@@ -63,7 +63,7 @@ succinct.
 if os.environ.get('GEMINI_API_KEY', ''):
     model = GeminiModel('gemini-2.5-flash', provider='google-gla')
 elif os.environ.get('OPENROUTER_API_KEY', ''):
-    model = OpenAIModel(
+    model = OpenAIChatModel(
         'google/gemini-2.5-flash-preview-05-20',
         provider=OpenRouterProvider(api_key=os.environ.get('OPENROUTER_API_KEY'))
     )
