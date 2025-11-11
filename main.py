@@ -3,6 +3,7 @@ import functools
 import logging
 import nest_asyncio
 import os
+import pprint
 import re
 import requests
 
@@ -164,6 +165,7 @@ def get_associated_jenkins_build(channel: str, event_id: str, thread_id: Optiona
     logging.info(f"calling get_build_info for {job_name} #{build_number}")
     try:
         b = jenkins_server.get_build_info(job_name, build_number)
+        logging.info(f"INFO: got build info: {pprint.pformat(b)}")
         _timestamp = datetime.fromtimestamp(b['timestamp'] / 1000)
 
         # Extract stream and architectures
@@ -408,7 +410,7 @@ def process_message(channel, event_id, thread_id, text=''):
     if len(thread_chats) > 30:
         thread_chats.popitem(last=False)
 
-    print(f"YYY {pre_prompt}")
+    logging.info(f"INFO: {pre_prompt} {user_prompt}")
     result = agent.run_sync(pre_prompt + user_prompt, message_history=message_history)
     message_history.extend(result.new_messages())
     return result
@@ -441,13 +443,13 @@ if __name__ == "__main__":
         raise ValueError("Must set environment vars to choose a chat platform. See README")
 
     if slack_defined:
-        print("Running in Slack mode.")
+        logging.info("Running in Slack mode.")
         chat_platform = SlackPlatform(slack_bot_token, process_message_func=process_message)
         handler = SocketModeHandler(chat_platform.slack_app, slack_app_token)
         handler.app.event("app_mention")(chat_platform.handle_app_mention_events)
         handler.start()
     else:
-        print("Running in Matrix mode.")
+        logging.info("Running in Matrix mode.")
         nest_asyncio.apply() # Apply nest_asyncio to allow nested event loops
         chat_platform = MatrixPlatform(matrix_server, matrix_access_token,
                 matrix_room, process_message_func=process_message)
