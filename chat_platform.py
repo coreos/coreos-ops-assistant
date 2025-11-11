@@ -97,12 +97,12 @@ class MatrixPlatform(ChatPlatform):
         response = asyncio.run(self.client.room_resolve_alias(self.matrix_room))
         self.matrix_room_id = response.room_id
         self.client.load_store()
-        logging.info(f"XXX: {self.client.user_id}")
+        logging.info(f"INFO: {self.client.user_id}")
 
     def send_message(self, channel: str, text: str, thread_id: Optional[str] = None):
-        print(f"XXX: send_message channel: {channel}")
-        print(f"XXX: send_message thread_id: {thread_id}")
-        print(f"XXX: send_message text: {text}")
+        logging.info(f"INFO: send_message channel: {channel}")
+        logging.info(f"INFO: send_message thread_id: {thread_id}")
+        logging.info(f"INFO: send_message text: {text}")
         try:
             content={
                 "msgtype": "m.text",
@@ -118,7 +118,7 @@ class MatrixPlatform(ChatPlatform):
                 message_type="m.room.message",
                 content=content
             ))
-            print(f"XXX: send_message response: {response}")
+            logging.info(f"INFO: send_message response: {response}")
         except Exception as e:
             logging.exception("Error sending Matrix message:")
 
@@ -157,7 +157,7 @@ class MatrixPlatform(ChatPlatform):
             # Get a specific message by its matrix event ID, which
             # we've indexed as the thread_id in this program and passed
             # into this function.
-            print(f"Matrix: Getting message from {channel} with event_id: {event_id}")
+            logging.info(f"Matrix: Getting message from {channel} with event_id: {event_id}")
             response = asyncio.run(self.client.room_get_event(
                 self.matrix_room_id,
                 event_id=event_id
@@ -183,8 +183,8 @@ class MatrixPlatform(ChatPlatform):
                 #         time we start up
                 #   - doesn't mention the botuser by name
                 return
-            logging.info(f"XXX got message from {room.display_name}: {event.body}")
-            pprint.pprint(event)
+            logging.info(f"INFO: got message from {room.display_name}: {event.body}")
+            logging.info(pprint.pformat(event))
             event_id = event.event_id
             thread_id = None
             if related.get('rel_type', "") == 'm.thread':
@@ -201,7 +201,7 @@ class MatrixPlatform(ChatPlatform):
             # at the same time and it gets hairy.
             _ = self.get_message(channel=self.matrix_room, event_id=thread_id or event_id)
                     
-            print(f"XXX room.room_id is {room.room_id}. room.display_name is {room.display_name}")
+            logging.info(f"INFO: room.room_id is {room.room_id}. room.display_name is {room.display_name}")
             result = self.process_message_func(
                 self.matrix_room,
                 event_id,
