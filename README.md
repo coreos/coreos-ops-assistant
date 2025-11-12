@@ -1,15 +1,9 @@
-# CoreOS Pipeline Assistant
+# CoreOS Operations Assistant
 
-This is an AI-powered assistant used by the CoreOS team to make pipeline monitoring easier.
-Currently, it only works in Slack, but in the future it will also be pluggable into Matrix.
+This is an AI-powered assistant used by the CoreOS team to make operations (such as
+pipeline monitoring) easier. It works in Slack or Matrix.
 
-The assistant listens for direct mentions in a Slack channel in which it was invited.
-
-Currently, it can:
-- retrieve overall pipeline health status
-- retrieve generic build information (stream, version, architectures, status)
-- retrieve build logs, analyze them, and provide a summary of failures
-- retry builds
+The assistant listens for direct mentions in a chat channel in which it was invited.
 
 ## Setup
 
@@ -56,7 +50,7 @@ If using OpenRouter:
     python main.py
     ```
 
-2.  **Invite the bot to your Slack channel.**
+2.  **Invite the bot to your channel.**
 
 3.  **Mention the bot in a thread of a Jenkins failure notification.** The bot will then reply with a summary of the failure.
 
@@ -64,7 +58,7 @@ If using OpenRouter:
 
 1.  **Build the container image:**
     ```
-    podman build -t coreos-pipeline-assistant .
+    podman build -t coreos-ops-assistant .
     ```
 
 2.  **Run the container:**
@@ -97,7 +91,7 @@ If using OpenRouter:
       -e JENKINS_TOKEN         \
       -e GEMINI_API_KEY        \
       -e OPENROUTER_API_KEY    \
-      coreos-pipeline-assistant
+      coreos-ops-assistant
     ```
 
     **Using a `.env` file:**
@@ -115,7 +109,7 @@ If using OpenRouter:
     ```
     Then run the container with the `--env-file` flag:
     ```
-    podman run -it --rm --env-file .env coreos-pipeline-assistant
+    podman run -it --rm --env-file .env coreos-ops-assistant
     ```
 
 ## Testing
